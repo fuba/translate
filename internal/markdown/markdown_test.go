@@ -47,7 +47,7 @@ func TestTranslateMarkdown(t *testing.T) {
 func TestTranslateMarkdownProgress(t *testing.T) {
 	input := "Hello **world**.\n\nSecond line."
 	var got []string
-	_, err := TranslateWithProgress(context.Background(), upperTranslator{}, []byte(input), "en", "ja",
+	_, err := TranslateWithProgress(context.Background(), upperTranslator{}, []byte(input), "en", "ja", 0,
 		func(text string) {
 			got = append(got, text)
 		})

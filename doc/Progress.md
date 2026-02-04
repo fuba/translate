@@ -9,6 +9,7 @@
 - UNIDOC キー暗号化保存（パスフレーズ、~/.config/translate/unidoc.key）
 - 設定ファイル保存（~/.config/translate/config.json）
 - verbose モードで翻訳結果を逐次出力
+- 翻訳入力のチャンク分割（max-chars, 句読点優先）
 
 ## Notes
 - PDF 翻訳は元フォントに翻訳先の文字が含まれない場合、文字化け/欠落の可能性あり

@@ -10,24 +10,27 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fuba/translate/internal/chunk"
 	"github.com/fuba/translate/internal/lang"
 	"github.com/fuba/translate/internal/llm"
 	"github.com/fuba/translate/internal/markdown"
 	"github.com/fuba/translate/internal/pdf"
 	"github.com/fuba/translate/internal/secure"
+	"github.com/fuba/translate/internal/translate"
 )
 
 type Config struct {
-	Format  string
-	InPath  string
-	OutPath string
-	From    string
-	To      string
-	Model   string
-	BaseURL string
-	APIKey  string
-	Timeout time.Duration
-	Verbose bool
+	Format   string
+	InPath   string
+	OutPath  string
+	From     string
+	To       string
+	Model    string
+	BaseURL  string
+	APIKey   string
+	Timeout  time.Duration
+	Verbose  bool
+	MaxChars int
 }
 
 func Run(ctx context.Context, cfg Config) error {
@@ -61,12 +64,9 @@ func Run(ctx context.Context, cfg Config) error {
 		if err != nil {
 			return err
 		}
-		out, err := client.Translate(ctx, string(input), cfg.From, cfg.To, "text")
+		out, err := translateText(ctx, client, string(input), cfg.From, cfg.To, cfg.MaxChars, progress)
 		if err != nil {
 			return err
-		}
-		if cfg.Verbose {
-			progress(out)
 		}
 		return writeOutput(cfg.OutPath, []byte(out))
 	case "md":
@@ -74,7 +74,7 @@ func Run(ctx context.Context, cfg Config) error {
 		if err != nil {
 			return err
 		}
-		out, err := markdown.TranslateWithProgress(ctx, client, input, cfg.From, cfg.To, progress)
+		out, err := markdown.TranslateWithProgress(ctx, client, input, cfg.From, cfg.To, cfg.MaxChars, progress)
 		if err != nil {
 			return err
 		}
@@ -90,10 +90,26 @@ func Run(ctx context.Context, cfg Config) error {
 		if err != nil {
 			return err
 		}
-		return pdf.Translate(ctx, client, cfg.InPath, cfg.OutPath, cfg.From, cfg.To, unidocKey, progress)
+		return pdf.Translate(ctx, client, cfg.InPath, cfg.OutPath, cfg.From, cfg.To, unidocKey, cfg.MaxChars, progress)
 	default:
 		return fmt.Errorf("unsupported format: %s", format)
 	}
+}
+
+func translateText(ctx context.Context, tr translate.Translator, text, from, to string, maxChars int, progress func(string)) (string, error) {
+	parts := chunk.Split(text, maxChars)
+	var b strings.Builder
+	for _, part := range parts {
+		out, err := tr.Translate(ctx, part, from, to, "text")
+		if err != nil {
+			return "", err
+		}
+		b.WriteString(out)
+		if progress != nil {
+			progress(out)
+		}
+	}
+	return b.String(), nil
 }
 
 func resolveFormat(format, inPath string) (string, error) {

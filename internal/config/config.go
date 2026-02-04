@@ -16,6 +16,7 @@ type File struct {
 	To             string `json:"to"`
 	Format         string `json:"format"`
 	TimeoutSeconds int    `json:"timeout_seconds"`
+	MaxChars       int    `json:"max_chars"`
 }
 
 func ConfigDir() (string, error) {
@@ -79,6 +80,13 @@ func Timeout(cfg File, fallback time.Duration) time.Duration {
 
 func StringOrFallback(value, fallback string) string {
 	if strings.TrimSpace(value) == "" {
+		return fallback
+	}
+	return value
+}
+
+func IntOrFallback(value, fallback int) int {
+	if value <= 0 {
 		return fallback
 	}
 	return value

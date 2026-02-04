@@ -50,6 +50,7 @@ func main() {
 	flag.StringVar(&cfg.APIKey, "api-key", os.Getenv("OPENAI_API_KEY"), "API key (default: OPENAI_API_KEY)")
 	flag.DurationVar(&cfg.Timeout, "timeout", config.Timeout(cfgFile, 120*time.Second), "HTTP timeout")
 	flag.BoolVar(&cfg.Verbose, "verbose", false, "print translated chunks to stderr")
+	flag.IntVar(&cfg.MaxChars, "max-chars", config.IntOrFallback(cfgFile.MaxChars, 2000), "max chars per translation request (0 disables)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "translate - translate text/markdown/pdf via OpenAI compatible API\n\n")
@@ -141,6 +142,7 @@ func configSet(args []string) error {
 	fs.StringVar(&cfg.To, "to", "", "target language code")
 	fs.StringVar(&cfg.Format, "format", "", "input format default")
 	timeout := fs.Duration("timeout", 0, "HTTP timeout (e.g. 120s)")
+	maxChars := fs.Int("max-chars", 0, "max chars per translation request")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -165,6 +167,8 @@ func configSet(args []string) error {
 			current.Format = cfg.Format
 		case "timeout":
 			current.TimeoutSeconds = int(timeout.Seconds())
+		case "max-chars":
+			current.MaxChars = *maxChars
 		}
 	})
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/fuba/translate/internal/chunk"
 	"github.com/fuba/translate/internal/translate"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -20,10 +21,10 @@ type textSegment struct {
 type ProgressFunc func(text string)
 
 func Translate(ctx context.Context, tr translate.Translator, input []byte, from, to string) ([]byte, error) {
-	return TranslateWithProgress(ctx, tr, input, from, to, nil)
+	return TranslateWithProgress(ctx, tr, input, from, to, 0, nil)
 }
 
-func TranslateWithProgress(ctx context.Context, tr translate.Translator, input []byte, from, to string, progress ProgressFunc) ([]byte, error) {
+func TranslateWithProgress(ctx context.Context, tr translate.Translator, input []byte, from, to string, maxChars int, progress ProgressFunc) ([]byte, error) {
 	segments := collectTextSegments(input)
 	if len(segments) == 0 {
 		return append([]byte(nil), input...), nil
@@ -35,14 +36,12 @@ func TranslateWithProgress(ctx context.Context, tr translate.Translator, input [
 			translated[i] = seg.text
 			continue
 		}
-		out, err := tr.Translate(ctx, seg.text, from, to, "text")
+		chunks := chunk.Split(seg.text, maxChars)
+		out, err := translateChunks(ctx, tr, chunks, from, to, progress)
 		if err != nil {
 			return nil, err
 		}
 		translated[i] = out
-		if progress != nil {
-			progress(out)
-		}
 	}
 
 	out := append([]byte(nil), input...)
@@ -52,6 +51,21 @@ func TranslateWithProgress(ctx context.Context, tr translate.Translator, input [
 		out = append(out[:seg.start], append(repl, out[seg.stop:]...)...)
 	}
 	return out, nil
+}
+
+func translateChunks(ctx context.Context, tr translate.Translator, chunks []string, from, to string, progress ProgressFunc) (string, error) {
+	var b strings.Builder
+	for _, part := range chunks {
+		out, err := tr.Translate(ctx, part, from, to, "text")
+		if err != nil {
+			return "", err
+		}
+		b.WriteString(out)
+		if progress != nil {
+			progress(out)
+		}
+	}
+	return b.String(), nil
 }
 
 func collectTextSegments(input []byte) []textSegment {

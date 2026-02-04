@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fuba/translate/internal/chunk"
 	"github.com/fuba/translate/internal/translate"
 	"github.com/unidoc/unipdf/v4/common"
 	"github.com/unidoc/unipdf/v4/common/license"
@@ -16,7 +17,7 @@ import (
 	"github.com/unidoc/unipdf/v4/model/optimize"
 )
 
-func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, from, to, unidocKey string, progress func(string)) error {
+func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, from, to, unidocKey string, maxChars int, progress func(string)) error {
 	if strings.TrimSpace(unidocKey) == "" {
 		return errors.New("unidoc key is required for PDF translation")
 	}
@@ -63,7 +64,7 @@ func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, fr
 		if progress != nil {
 			progress(fmt.Sprintf("[page %d] translating", pageNum))
 		}
-		if err := translatePageText(ctx, tr, page, from, to, progress); err != nil {
+		if err := translatePageText(ctx, tr, page, from, to, maxChars, progress); err != nil {
 			return fmt.Errorf("page %d: %w", pageNum, err)
 		}
 		if err := pdfWriter.AddPage(page); err != nil {
@@ -88,7 +89,7 @@ func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, fr
 	return pdfWriter.Write(outFile)
 }
 
-func translatePageText(ctx context.Context, tr translate.Translator, page *model.PdfPage, from, to string, progress func(string)) error {
+func translatePageText(ctx context.Context, tr translate.Translator, page *model.PdfPage, from, to string, maxChars int, progress func(string)) error {
 	contents, err := page.GetAllContentStreams()
 	if err != nil {
 		return err
@@ -124,15 +125,12 @@ func translatePageText(ctx context.Context, tr translate.Translator, page *model
 
 		translated, ok := cache[decoded]
 		if !ok {
-			out, err := tr.Translate(ctx, decoded, from, to, "text")
+			out, err := translateChunked(ctx, tr, decoded, from, to, maxChars, progress)
 			if err != nil {
 				return err
 			}
 			translated = out
 			cache[decoded] = translated
-			if progress != nil {
-				progress(translated)
-			}
 		}
 
 		if currFont != nil {
@@ -213,4 +211,20 @@ func translatePageText(ctx context.Context, tr translate.Translator, page *model
 	}
 
 	return page.SetContentStreams([]string{ops.String()}, core.NewFlateEncoder())
+}
+
+func translateChunked(ctx context.Context, tr translate.Translator, text, from, to string, maxChars int, progress func(string)) (string, error) {
+	parts := chunk.Split(text, maxChars)
+	var b strings.Builder
+	for _, part := range parts {
+		out, err := tr.Translate(ctx, part, from, to, "text")
+		if err != nil {
+			return "", err
+		}
+		b.WriteString(out)
+		if progress != nil {
+			progress(out)
+		}
+	}
+	return b.String(), nil
 }
