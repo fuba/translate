@@ -14,6 +14,7 @@ import (
 	"github.com/fuba/translate/internal/llm"
 	"github.com/fuba/translate/internal/markdown"
 	"github.com/fuba/translate/internal/pdf"
+	"github.com/fuba/translate/internal/secure"
 )
 
 type Config struct {
@@ -74,7 +75,11 @@ func Run(ctx context.Context, cfg Config) error {
 		if cfg.OutPath == "" || cfg.OutPath == "-" {
 			return errors.New("pdf output requires a file path")
 		}
-		return pdf.Translate(ctx, client, cfg.InPath, cfg.OutPath, cfg.From, cfg.To)
+		unidocKey, err := secure.LoadUnidocKey()
+		if err != nil {
+			return err
+		}
+		return pdf.Translate(ctx, client, cfg.InPath, cfg.OutPath, cfg.From, cfg.To, unidocKey)
 	default:
 		return fmt.Errorf("unsupported format: %s", format)
 	}

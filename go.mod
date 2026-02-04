@@ -7,6 +7,8 @@ toolchain go1.24.13
 require (
 	github.com/unidoc/unipdf/v4 v4.6.0
 	github.com/yuin/goldmark v1.7.16
+	golang.org/x/crypto v0.41.0
+	golang.org/x/term v0.34.0
 )
 
 require (
@@ -20,7 +22,6 @@ require (
 	github.com/unidoc/pkcs7 v0.3.0 // indirect
 	github.com/unidoc/timestamp v0.0.0-20200412005513-91597fd3793a // indirect
 	github.com/unidoc/unitype v0.5.1 // indirect
-	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/image v0.30.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect

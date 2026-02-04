@@ -23,12 +23,32 @@ translate --format pdf --in input.pdf --out output.pdf
 
 `--base-url` は `http://kirgizu:8080` または `http://kirgizu:8080/v1` を指定できます。内部で `/v1/chat/completions` を付与します。
 
+## 設定ファイル
+
+設定ファイルは `~/.config/translate/config.json`（`XDG_CONFIG_HOME` があればそちら）に保存されます。
+
+```sh
+translate config set --base-url http://kirgizu:8080 --model gpt-oss-20b
+```
+
 ## PDF について
 
 - UniPDF (unidoc/unipdf) v4 を使用します。
-- **`UNIDOC_LICENSE_API_KEY` が必須**です。
+- `UNIDOC_LICENSE_API_KEY` を暗号化保存できます。
+
+### UNIDOC キーの保存
+
+```sh
+translate auth set-unidoc
+```
+
+- パスフレーズで暗号化して `~/.config/translate/unidoc.key` に保存します。
+- 復号には `TRANSLATE_PASSPHRASE` を使うか、対話入力します。
+
+### PDF 翻訳
+
 - PDF のテキストオブジェクトを翻訳して置換します（レイアウト維持を優先）。
-- 元のフォントに翻訳先の文字が含まれない場合、文字化け/欠落する可能性があります。
+- 元のフォントに翻訳先の文字が含まれない場合、文字化け/欠落の可能性があります。
 
 ## 必要環境
 

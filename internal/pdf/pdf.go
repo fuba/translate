@@ -16,11 +16,11 @@ import (
 	"github.com/unidoc/unipdf/v4/model/optimize"
 )
 
-func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, from, to string) error {
-	if strings.TrimSpace(os.Getenv("UNIDOC_LICENSE_API_KEY")) == "" {
-		return errors.New("UNIDOC_LICENSE_API_KEY is required for PDF translation")
+func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, from, to, unidocKey string) error {
+	if strings.TrimSpace(unidocKey) == "" {
+		return errors.New("unidoc key is required for PDF translation")
 	}
-	if err := license.SetMeteredKey(os.Getenv("UNIDOC_LICENSE_API_KEY")); err != nil {
+	if err := license.SetMeteredKey(unidocKey); err != nil {
 		return fmt.Errorf("set unidoc license: %w", err)
 	}
 
