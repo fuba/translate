@@ -49,6 +49,7 @@ func main() {
 	flag.StringVar(&cfg.BaseURL, "base-url", config.StringOrFallback(cfgFile.BaseURL, "http://kirgizu:8080"), "OpenAI compatible base URL")
 	flag.StringVar(&cfg.APIKey, "api-key", os.Getenv("OPENAI_API_KEY"), "API key (default: OPENAI_API_KEY)")
 	flag.DurationVar(&cfg.Timeout, "timeout", config.Timeout(cfgFile, 120*time.Second), "HTTP timeout")
+	flag.BoolVar(&cfg.Verbose, "verbose", false, "print translated chunks to stderr")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "translate - translate text/markdown/pdf via OpenAI compatible API\n\n")

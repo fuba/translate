@@ -27,6 +27,7 @@ type Config struct {
 	BaseURL string
 	APIKey  string
 	Timeout time.Duration
+	Verbose bool
 }
 
 func Run(ctx context.Context, cfg Config) error {
@@ -47,6 +48,13 @@ func Run(ctx context.Context, cfg Config) error {
 		return err
 	}
 
+	progress := func(string) {}
+	if cfg.Verbose {
+		progress = func(text string) {
+			fmt.Fprintln(os.Stderr, text)
+		}
+	}
+
 	switch format {
 	case "text":
 		input, err := readInput(cfg.InPath)
@@ -57,13 +65,16 @@ func Run(ctx context.Context, cfg Config) error {
 		if err != nil {
 			return err
 		}
+		if cfg.Verbose {
+			progress(out)
+		}
 		return writeOutput(cfg.OutPath, []byte(out))
 	case "md":
 		input, err := readInput(cfg.InPath)
 		if err != nil {
 			return err
 		}
-		out, err := markdown.Translate(ctx, client, input, cfg.From, cfg.To)
+		out, err := markdown.TranslateWithProgress(ctx, client, input, cfg.From, cfg.To, progress)
 		if err != nil {
 			return err
 		}
@@ -79,7 +90,7 @@ func Run(ctx context.Context, cfg Config) error {
 		if err != nil {
 			return err
 		}
-		return pdf.Translate(ctx, client, cfg.InPath, cfg.OutPath, cfg.From, cfg.To, unidocKey)
+		return pdf.Translate(ctx, client, cfg.InPath, cfg.OutPath, cfg.From, cfg.To, unidocKey, progress)
 	default:
 		return fmt.Errorf("unsupported format: %s", format)
 	}

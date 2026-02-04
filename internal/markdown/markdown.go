@@ -17,7 +17,13 @@ type textSegment struct {
 	text  string
 }
 
+type ProgressFunc func(text string)
+
 func Translate(ctx context.Context, tr translate.Translator, input []byte, from, to string) ([]byte, error) {
+	return TranslateWithProgress(ctx, tr, input, from, to, nil)
+}
+
+func TranslateWithProgress(ctx context.Context, tr translate.Translator, input []byte, from, to string, progress ProgressFunc) ([]byte, error) {
 	segments := collectTextSegments(input)
 	if len(segments) == 0 {
 		return append([]byte(nil), input...), nil
@@ -34,6 +40,9 @@ func Translate(ctx context.Context, tr translate.Translator, input []byte, from,
 			return nil, err
 		}
 		translated[i] = out
+		if progress != nil {
+			progress(out)
+		}
 	}
 
 	out := append([]byte(nil), input...)

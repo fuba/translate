@@ -20,6 +20,7 @@ translate --format pdf --in input.pdf --out output.pdf
 - `--base-url` : 既定 `http://kirgizu:8080`
 - `--api-key` : API キー（省略時は `OPENAI_API_KEY`）
 - `--timeout` : HTTP タイムアウト（既定 120s）
+- `--verbose` : 翻訳途中のテキストを stderr に逐次出力
 
 `--base-url` は `http://kirgizu:8080` または `http://kirgizu:8080/v1` を指定できます。内部で `/v1/chat/completions` を付与します。
 

@@ -43,3 +43,18 @@ func TestTranslateMarkdown(t *testing.T) {
 		t.Fatalf("expected link text to be translated and URL preserved: %q", out)
 	}
 }
+
+func TestTranslateMarkdownProgress(t *testing.T) {
+	input := "Hello **world**.\n\nSecond line."
+	var got []string
+	_, err := TranslateWithProgress(context.Background(), upperTranslator{}, []byte(input), "en", "ja",
+		func(text string) {
+			got = append(got, text)
+		})
+	if err != nil {
+		t.Fatalf("TranslateWithProgress error: %v", err)
+	}
+	if len(got) == 0 {
+		t.Fatalf("expected progress callbacks, got none")
+	}
+}

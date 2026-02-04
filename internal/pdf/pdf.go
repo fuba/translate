@@ -16,7 +16,7 @@ import (
 	"github.com/unidoc/unipdf/v4/model/optimize"
 )
 
-func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, from, to, unidocKey string) error {
+func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, from, to, unidocKey string, progress func(string)) error {
 	if strings.TrimSpace(unidocKey) == "" {
 		return errors.New("unidoc key is required for PDF translation")
 	}
@@ -60,7 +60,10 @@ func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, fr
 		if err != nil {
 			return err
 		}
-		if err := translatePageText(ctx, tr, page, from, to); err != nil {
+		if progress != nil {
+			progress(fmt.Sprintf("[page %d] translating", pageNum))
+		}
+		if err := translatePageText(ctx, tr, page, from, to, progress); err != nil {
 			return fmt.Errorf("page %d: %w", pageNum, err)
 		}
 		if err := pdfWriter.AddPage(page); err != nil {
@@ -85,7 +88,7 @@ func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, fr
 	return pdfWriter.Write(outFile)
 }
 
-func translatePageText(ctx context.Context, tr translate.Translator, page *model.PdfPage, from, to string) error {
+func translatePageText(ctx context.Context, tr translate.Translator, page *model.PdfPage, from, to string, progress func(string)) error {
 	contents, err := page.GetAllContentStreams()
 	if err != nil {
 		return err
@@ -127,6 +130,9 @@ func translatePageText(ctx context.Context, tr translate.Translator, page *model
 			}
 			translated = out
 			cache[decoded] = translated
+			if progress != nil {
+				progress(translated)
+			}
 		}
 
 		if currFont != nil {
