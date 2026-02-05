@@ -9,16 +9,13 @@ import (
 
 	"github.com/fuba/translate/internal/chunk"
 	"github.com/fuba/translate/internal/translate"
-	"github.com/unidoc/unipdf/v4/common"
 	"github.com/unidoc/unipdf/v4/common/license"
-	"github.com/unidoc/unipdf/v4/contentstream"
-	"github.com/unidoc/unipdf/v4/core"
+	"github.com/unidoc/unipdf/v4/creator"
 	"github.com/unidoc/unipdf/v4/extractor"
 	"github.com/unidoc/unipdf/v4/model"
-	"github.com/unidoc/unipdf/v4/model/optimize"
 )
 
-func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, from, to, unidocKey string, maxChars int, progress func(string)) error {
+func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, from, to, unidocKey string, maxChars int, progress func(string), fontPath string) error {
 	if strings.TrimSpace(unidocKey) == "" {
 		return errors.New("unidoc key is required for PDF translation")
 	}
@@ -51,8 +48,13 @@ func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, fr
 		}
 	}
 
-	pdfWriter := model.NewPdfWriter()
 	count, err := pdfReader.GetNumPages()
+	if err != nil {
+		return err
+	}
+
+	c := creator.New()
+	overlayFont, err := loadOverlayFont(fontPath)
 	if err != nil {
 		return err
 	}
@@ -62,32 +64,18 @@ func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, fr
 		if err != nil {
 			return err
 		}
+		if err := c.AddPage(page); err != nil {
+			return err
+		}
 		if progress != nil {
 			progress(fmt.Sprintf("[page %d] translating", pageNum))
 		}
-		if err := translatePageText(ctx, tr, page, from, to, maxChars, progress); err != nil {
+		if err := overlayTranslatedLines(ctx, tr, c, page, from, to, maxChars, progress, overlayFont); err != nil {
 			return fmt.Errorf("page %d: %w", pageNum, err)
 		}
-		if err := pdfWriter.AddPage(page); err != nil {
-			return err
-		}
 	}
 
-	outFile, err := os.Create(outPath)
-	if err != nil {
-		return err
-	}
-	defer outFile.Close()
-
-	opt := optimize.Options{
-		CombineDuplicateStreams:         true,
-		CombineIdenticalIndirectObjects: true,
-		UseObjectStreams:                true,
-		CompressStreams:                 true,
-	}
-	pdfWriter.SetOptimizer(optimize.New(opt))
-
-	return pdfWriter.Write(outFile)
+	return c.WriteToFile(outPath)
 }
 
 func ExtractText(inPath, unidocKey string) (string, error) {
@@ -148,128 +136,63 @@ func ExtractText(inPath, unidocKey string) (string, error) {
 	return joinPageText(pages), nil
 }
 
-func translatePageText(ctx context.Context, tr translate.Translator, page *model.PdfPage, from, to string, maxChars int, progress func(string)) error {
-	contents, err := page.GetAllContentStreams()
+func overlayTranslatedLines(ctx context.Context, tr translate.Translator, c *creator.Creator, page *model.PdfPage, from, to string, maxChars int, progress func(string), font *model.PdfFont) error {
+	ex, err := extractor.New(page)
 	if err != nil {
 		return err
 	}
-
-	ops, err := contentstream.NewContentStreamParser(contents).Parse()
+	pageText, _, _, err := ex.ExtractPageText()
 	if err != nil {
 		return err
 	}
-
-	var currFont *model.PdfFont
-	cache := map[string]string{}
-
-	translateObj := func(objptr *core.PdfObject) error {
-		strObj, ok := core.GetString(*objptr)
-		if !ok {
-			common.Log.Debug("Invalid parameter, skipping")
-			return nil
-		}
-
-		decoded := strObj.String()
-		if currFont != nil {
-			val, _, numMisses := currFont.CharcodeBytesToUnicode(strObj.Bytes())
-			if numMisses != 0 {
-				common.Log.Debug("WARN: some charcodes could not be decoded")
-			}
-			decoded = val
-		}
-
-		if strings.TrimSpace(decoded) == "" {
-			return nil
-		}
-
-		translated, ok := cache[decoded]
-		if !ok {
-			out, err := translateChunked(ctx, tr, decoded, from, to, maxChars, progress)
-			if err != nil {
-				return err
-			}
-			translated = out
-			cache[decoded] = translated
-		}
-
-		if currFont != nil {
-			encodedBytes, numMisses := currFont.StringToCharcodeBytes(translated)
-			if numMisses != 0 {
-				common.Log.Debug("WARN: some runes could not be encoded")
-			}
-			*strObj = *core.MakeString(string(encodedBytes))
-			return nil
-		}
-
-		*strObj = *core.MakeString(translated)
-		return nil
-	}
-
-	processor := contentstream.NewContentStreamProcessor(*ops)
-	processor.AddHandler(contentstream.HandlerConditionEnumAllOperands, "",
-		func(op *contentstream.ContentStreamOperation, gs contentstream.GraphicsState, resources *model.PdfPageResources) error {
-			switch op.Operand {
-			case "Tj", "'":
-				if len(op.Params) != 1 {
-					common.Log.Debug("Invalid: Tj/' with invalid params")
-					return nil
-				}
-				return translateObj(&op.Params[0])
-			case "\"":
-				if len(op.Params) < 1 {
-					common.Log.Debug("Invalid: \" with invalid params")
-					return nil
-				}
-				idx := len(op.Params) - 1
-				return translateObj(&op.Params[idx])
-			case "TJ":
-				if len(op.Params) != 1 {
-					common.Log.Debug("Invalid: TJ with invalid params")
-					return nil
-				}
-				arr, _ := core.GetArray(op.Params[0])
-				for i := range arr.Elements() {
-					obj := arr.Get(i)
-					if err := translateObj(&obj); err != nil {
-						return err
-					}
-					arr.Set(i, obj)
-				}
-				return nil
-			case "Tf":
-				if len(op.Params) != 2 {
-					common.Log.Debug("Invalid: Tf with invalid params")
-					return nil
-				}
-				fname, ok := core.GetName(op.Params[0])
-				if !ok || fname == nil {
-					common.Log.Debug("ERROR: could not get font name")
-					return nil
-				}
-
-				fObj, has := resources.GetFontByName(*fname)
-				if !has {
-					common.Log.Debug("ERROR: font %s not found", fname.String())
-					return nil
-				}
-
-				pdfFont, err := model.NewPdfFontFromPdfObject(fObj)
-				if err != nil {
-					common.Log.Debug("ERROR: loading font")
-					return nil
-				}
-				currFont = pdfFont
-				return nil
-			default:
-				return nil
-			}
-		})
-
-	if err := processor.Process(page.Resources); err != nil {
+	mediaBox, err := page.GetMediaBox()
+	if err != nil {
 		return err
 	}
+	if page.MediaBox == nil {
+		page.MediaBox = mediaBox
+	}
+	pageHeight := mediaBox.Ury
 
-	return page.SetContentStreams([]string{ops.String()}, core.NewFlateEncoder())
+	lines := groupLines(pageText.Marks().Elements())
+	for _, line := range lines {
+		if strings.TrimSpace(line.Text) == "" {
+			continue
+		}
+		translated, err := translateChunked(ctx, tr, line.Text, from, to, maxChars, progress)
+		if err != nil {
+			return err
+		}
+		drawLineOverlay(c, line, translated, pageHeight, font)
+	}
+	return nil
+}
+
+func drawLineOverlay(c *creator.Creator, line textLine, translated string, pageHeight float64, font *model.PdfFont) {
+	y := pageHeight - line.Box.Ury
+	height := line.Box.Ury - line.Box.Lly
+	width := line.Box.Urx - line.Box.Llx
+
+	rect := c.NewRectangle(line.Box.Llx, y, width, height)
+	rect.SetFillColor(creator.ColorWhite)
+	rect.SetBorderColor(creator.ColorWhite)
+	_ = c.Draw(rect)
+
+	p := c.NewStyledParagraph()
+	p.SetText(translated)
+	p.SetPos(line.Box.Llx, y)
+	p.SetFontSize(height)
+	if font != nil {
+		p.SetFont(font)
+	}
+	_ = c.Draw(p)
+}
+
+func loadOverlayFont(fontPath string) (*model.PdfFont, error) {
+	if strings.TrimSpace(fontPath) == "" {
+		return model.NewStandard14Font("Helvetica")
+	}
+	return model.NewCompositePdfFontFromTTFFile(fontPath)
 }
 
 func translateChunked(ctx context.Context, tr translate.Translator, text, from, to string, maxChars int, progress func(string)) (string, error) {

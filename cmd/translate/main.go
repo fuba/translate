@@ -55,6 +55,7 @@ func main() {
 	flag.DurationVar(&cfg.PassphraseTTL, "passphrase-ttl", config.PassphraseTTL(cfgFile, 10*time.Minute), "cache passphrase for duration (0 disables)")
 	flag.StringVar(&cfg.DumpExtracted, "dump-extracted", "", "dump raw extracted PDF text to path (use - for stdout)")
 	flag.BoolVar(&cfg.VerbosePrompt, "verbose-prompt", false, "print prompts to stderr")
+	flag.StringVar(&cfg.PDFFont, "pdf-font", "", "TTF font file for PDF overlay")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "translate - translate text/markdown/pdf via OpenAI compatible API\n\n")

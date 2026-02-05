@@ -14,6 +14,7 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-text/typesetting v0.3.0 // indirect
+	github.com/gorilla/i18n v0.0.0-20150820051429-8b358169da46 // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
@@ -21,8 +22,10 @@ require (
 	github.com/unidoc/freetype v0.2.3 // indirect
 	github.com/unidoc/pkcs7 v0.3.0 // indirect
 	github.com/unidoc/timestamp v0.0.0-20200412005513-91597fd3793a // indirect
+	github.com/unidoc/unichart v0.5.1 // indirect
 	github.com/unidoc/unitype v0.5.1 // indirect
 	golang.org/x/image v0.30.0 // indirect
+	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect

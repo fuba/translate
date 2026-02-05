@@ -35,6 +35,7 @@ type Config struct {
 	PassphraseTTL time.Duration
 	DumpExtracted string
 	VerbosePrompt bool
+	PDFFont       string
 }
 
 func Run(ctx context.Context, cfg Config) error {
@@ -112,7 +113,7 @@ func Run(ctx context.Context, cfg Config) error {
 		if err != nil {
 			return err
 		}
-		return pdf.Translate(ctx, client, cfg.InPath, cfg.OutPath, cfg.From, cfg.To, unidocKey, cfg.MaxChars, progress)
+		return pdf.Translate(ctx, client, cfg.InPath, cfg.OutPath, cfg.From, cfg.To, unidocKey, cfg.MaxChars, progress, cfg.PDFFont)
 	default:
 		return fmt.Errorf("unsupported format: %s", format)
 	}
