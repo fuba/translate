@@ -53,6 +53,7 @@ func main() {
 	flag.IntVar(&cfg.MaxChars, "max-chars", config.IntOrFallback(cfgFile.MaxChars, 2000), "max chars per translation request (0 disables)")
 	flag.StringVar(&cfg.Endpoint, "endpoint", config.StringOrFallback(cfgFile.Endpoint, "completion"), "endpoint: chat|completion|auto")
 	flag.DurationVar(&cfg.PassphraseTTL, "passphrase-ttl", config.PassphraseTTL(cfgFile, 10*time.Minute), "cache passphrase for duration (0 disables)")
+	flag.StringVar(&cfg.DumpExtracted, "dump-extracted", "", "dump raw extracted PDF text to path (use - for stdout)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "translate - translate text/markdown/pdf via OpenAI compatible API\n\n")

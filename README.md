@@ -24,6 +24,7 @@ translate --format pdf --in input.pdf --out output.pdf
 - `--verbose` : 翻訳途中のテキストを stderr に逐次出力
 - `--endpoint` : `chat|completion|auto`（既定 `completion`）
 - `--passphrase-ttl` : パスフレーズキャッシュ（既定 10m、0 で無効）
+- `--dump-extracted` : PDF の生テキスト抽出を出力（パス指定、`-` で stdout）
 
 `--base-url` は `http://kirgizu:8080` または `http://kirgizu:8080/v1` を指定できます。内部で `/v1/*` を付与します。
 
@@ -54,6 +55,12 @@ translate auth set-unidoc
 
 - PDF のテキストオブジェクトを翻訳して置換します（レイアウト維持を優先）。
 - 元のフォントに翻訳先の文字が含まれない場合、文字化け/欠落の可能性があります。
+
+### PDF 抽出テキストの確認
+
+```sh
+translate --format pdf --in input.pdf --dump-extracted -
+```
 
 ## 必要環境
 

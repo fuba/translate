@@ -33,6 +33,7 @@ type Config struct {
 	MaxChars      int
 	Endpoint      string
 	PassphraseTTL time.Duration
+	DumpExtracted string
 }
 
 func Run(ctx context.Context, cfg Config) error {
@@ -90,6 +91,17 @@ func Run(ctx context.Context, cfg Config) error {
 	case "pdf":
 		if cfg.InPath == "" || cfg.InPath == "-" {
 			return errors.New("pdf input requires a file path")
+		}
+		if strings.TrimSpace(cfg.DumpExtracted) != "" {
+			unidocKey, err := secure.LoadUnidocKey(cfg.PassphraseTTL)
+			if err != nil {
+				return err
+			}
+			text, err := pdf.ExtractText(cfg.InPath, unidocKey)
+			if err != nil {
+				return err
+			}
+			return writeOutput(cfg.DumpExtracted, []byte(text))
 		}
 		if cfg.OutPath == "" || cfg.OutPath == "-" {
 			return errors.New("pdf output requires a file path")

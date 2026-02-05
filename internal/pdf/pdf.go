@@ -13,6 +13,7 @@ import (
 	"github.com/unidoc/unipdf/v4/common/license"
 	"github.com/unidoc/unipdf/v4/contentstream"
 	"github.com/unidoc/unipdf/v4/core"
+	"github.com/unidoc/unipdf/v4/extractor"
 	"github.com/unidoc/unipdf/v4/model"
 	"github.com/unidoc/unipdf/v4/model/optimize"
 )
@@ -87,6 +88,64 @@ func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, fr
 	pdfWriter.SetOptimizer(optimize.New(opt))
 
 	return pdfWriter.Write(outFile)
+}
+
+func ExtractText(inPath, unidocKey string) (string, error) {
+	if strings.TrimSpace(unidocKey) == "" {
+		return "", errors.New("unidoc key is required for PDF extraction")
+	}
+	if err := license.SetMeteredKey(unidocKey); err != nil {
+		return "", fmt.Errorf("set unidoc license: %w", err)
+	}
+
+	f, err := os.Open(inPath)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	pdfReader, err := model.NewPdfReader(f)
+	if err != nil {
+		return "", err
+	}
+
+	encrypted, err := pdfReader.IsEncrypted()
+	if err != nil {
+		return "", err
+	}
+	if encrypted {
+		ok, err := pdfReader.Decrypt([]byte(""))
+		if err != nil {
+			return "", err
+		}
+		if !ok {
+			return "", errors.New("encrypted pdf requires password")
+		}
+	}
+
+	count, err := pdfReader.GetNumPages()
+	if err != nil {
+		return "", err
+	}
+
+	pages := make([]string, 0, count)
+	for pageNum := 1; pageNum <= count; pageNum++ {
+		page, err := pdfReader.GetPage(pageNum)
+		if err != nil {
+			return "", err
+		}
+		ex, err := extractor.New(page)
+		if err != nil {
+			return "", err
+		}
+		pageText, _, _, err := ex.ExtractPageText()
+		if err != nil {
+			return "", err
+		}
+		pages = append(pages, pageText.Text())
+	}
+
+	return joinPageText(pages), nil
 }
 
 func translatePageText(ctx context.Context, tr translate.Translator, page *model.PdfPage, from, to string, maxChars int, progress func(string)) error {
@@ -227,4 +286,14 @@ func translateChunked(ctx context.Context, tr translate.Translator, text, from, 
 		}
 	}
 	return b.String(), nil
+}
+
+func joinPageText(pages []string) string {
+	var b strings.Builder
+	for i, text := range pages {
+		b.WriteString(fmt.Sprintf("=== Page %d ===\n", i+1))
+		b.WriteString(text)
+		b.WriteString("\n\n")
+	}
+	return b.String()
 }
