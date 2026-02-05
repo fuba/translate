@@ -13,6 +13,7 @@
 - completion エンドポイント対応（auto 判定）
 - パスフレーズの一時キャッシュ対応
 - エンドポイント既定を completion に変更
+- completion プロンプトを Harmony 形式に変更
 
 ## Notes
 - PDF 翻訳は元フォントに翻訳先の文字が含まれない場合、文字化け/欠落の可能性あり

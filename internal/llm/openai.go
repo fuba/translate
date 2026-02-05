@@ -198,12 +198,12 @@ func (c *Client) translateChat(ctx context.Context, text, from, to, format strin
 }
 
 func (c *Client) translateCompletion(ctx context.Context, text, from, to, format string) (string, error) {
-	prompt := buildSystemPrompt(from, to, format) + "\n\nINPUT:\n" + text + "\n\nOUTPUT:\n"
+	prompt := buildHarmonyPrompt(buildSystemPrompt(from, to, format), text)
 	payload := completionRequest{
 		Model:       c.model,
 		Prompt:      prompt,
 		Temperature: 0.2,
-		Stop:        []string{"\n\n", "###"},
+		Stop:        []string{"<|end|>", "<|eot_id|>", "<|start|>"},
 	}
 
 	body, err := json.Marshal(payload)
@@ -243,6 +243,18 @@ func (c *Client) translateCompletion(ctx context.Context, text, from, to, format
 	}
 
 	return strings.TrimSpace(decoded.Choices[0].Text), nil
+}
+
+func buildHarmonyPrompt(systemMessage, userMessage string) string {
+	var b strings.Builder
+	b.WriteString("<|start|>system<|message|>")
+	b.WriteString(systemMessage)
+	b.WriteString("<|end|>\n")
+	b.WriteString("<|start|>user<|message|>")
+	b.WriteString(userMessage)
+	b.WriteString("<|end|>\n")
+	b.WriteString("<|start|>assistant<|channel|>final<|message|>")
+	return b.String()
 }
 
 func (c *Client) effectiveEndpoint(ctx context.Context) string {

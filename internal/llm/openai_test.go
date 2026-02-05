@@ -52,7 +52,7 @@ func TestAutoEndpointUsesCompletion(t *testing.T) {
 	if gotPath != "/v1/completions" {
 		t.Fatalf("path = %q, want /v1/completions", gotPath)
 	}
-	if !strings.Contains(gotReq.Prompt, "hello") {
+	if !strings.Contains(gotReq.Prompt, "<|start|>user<|message|>hello") {
 		t.Fatalf("prompt missing input: %q", gotReq.Prompt)
 	}
 	if out != "OK" {
