@@ -53,6 +53,9 @@ func Run(ctx context.Context, cfg Config) error {
 	if strings.TrimSpace(cfg.To) == "" {
 		return errors.New("target language is required")
 	}
+	if strings.TrimSpace(cfg.BaseURL) == "" {
+		return errors.New("base-url is required (set --base-url or translate config set --base-url)")
+	}
 
 	client, err := llm.NewClient(
 		cfg.BaseURL,

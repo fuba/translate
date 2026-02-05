@@ -17,6 +17,8 @@ make install
 ```
 
 `~/.local/bin/translate` にインストールされます（`PREFIX`/`BINDIR` で変更可）。
+`config.json` の雛形を `~/.config/translate/config.json` に作成します。
+`base_url` を自分の API エンドポイントに設定してください。
 
 ### 主なオプション
 
