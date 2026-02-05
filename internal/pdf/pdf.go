@@ -19,7 +19,7 @@ func Translate(ctx context.Context, tr translate.Translator, inPath, outPath, fr
 	if strings.TrimSpace(unidocKey) == "" {
 		return errors.New("unidoc key is required for PDF translation")
 	}
-	if err := license.SetMeteredKey(unidocKey); err != nil {
+	if err := setLicense(unidocKey); err != nil {
 		return fmt.Errorf("set unidoc license: %w", err)
 	}
 
@@ -82,7 +82,7 @@ func ExtractText(inPath, unidocKey string) (string, error) {
 	if strings.TrimSpace(unidocKey) == "" {
 		return "", errors.New("unidoc key is required for PDF extraction")
 	}
-	if err := license.SetMeteredKey(unidocKey); err != nil {
+	if err := setLicense(unidocKey); err != nil {
 		return "", fmt.Errorf("set unidoc license: %w", err)
 	}
 
@@ -134,6 +134,87 @@ func ExtractText(inPath, unidocKey string) (string, error) {
 	}
 
 	return joinPageText(pages), nil
+}
+
+func CountChunks(inPath, unidocKey string, maxChars int) (int, error) {
+	if strings.TrimSpace(unidocKey) == "" {
+		return 0, errors.New("unidoc key is required for PDF extraction")
+	}
+	if err := setLicense(unidocKey); err != nil {
+		return 0, fmt.Errorf("set unidoc license: %w", err)
+	}
+
+	f, err := os.Open(inPath)
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+
+	pdfReader, err := model.NewPdfReader(f)
+	if err != nil {
+		return 0, err
+	}
+
+	encrypted, err := pdfReader.IsEncrypted()
+	if err != nil {
+		return 0, err
+	}
+	if encrypted {
+		ok, err := pdfReader.Decrypt([]byte(""))
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, errors.New("encrypted pdf requires password")
+		}
+	}
+
+	count, err := pdfReader.GetNumPages()
+	if err != nil {
+		return 0, err
+	}
+
+	total := 0
+	for pageNum := 1; pageNum <= count; pageNum++ {
+		page, err := pdfReader.GetPage(pageNum)
+		if err != nil {
+			return 0, err
+		}
+		extract, err := extractor.New(page)
+		if err != nil {
+			return 0, err
+		}
+		pageText, _, _, err := extract.ExtractPageText()
+		if err != nil {
+			return 0, err
+		}
+		lines := groupLines(pageText.Marks().Elements())
+		for _, line := range lines {
+			if strings.TrimSpace(line.Text) == "" {
+				continue
+			}
+			total += len(chunk.Split(line.Text, maxChars))
+		}
+	}
+
+	return total, nil
+}
+
+func setLicense(key string) error {
+	if err := license.SetMeteredKey(key); err != nil {
+		if isLicenseAlreadySet(err) {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func isLicenseAlreadySet(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(err.Error()), "license key already set")
 }
 
 func overlayTranslatedLines(ctx context.Context, tr translate.Translator, c *creator.Creator, page *model.PdfPage, from, to string, maxChars int, progress func(string), font *model.PdfFont) error {
@@ -191,6 +272,12 @@ func drawLineOverlay(c *creator.Creator, line textLine, translated string, pageH
 func loadOverlayFont(fontPath string) (*model.PdfFont, error) {
 	if strings.TrimSpace(fontPath) == "" {
 		return model.NewStandard14Font("Helvetica")
+	}
+	if _, err := os.Stat(fontPath); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, fmt.Errorf("pdf font not found: %s", fontPath)
+		}
+		return nil, err
 	}
 	return model.NewCompositePdfFontFromTTFFile(fontPath)
 }

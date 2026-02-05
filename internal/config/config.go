@@ -19,6 +19,7 @@ type File struct {
 	MaxChars             int    `json:"max_chars"`
 	Endpoint             string `json:"endpoint"`
 	PassphraseTTLSeconds int    `json:"passphrase_ttl_seconds"`
+	PDFFont              string `json:"pdf_font"`
 }
 
 func ConfigDir() (string, error) {
@@ -35,6 +36,14 @@ func ConfigPath() (string, error) {
 		return "", err
 	}
 	return filepath.Join(dir, "config.json"), nil
+}
+
+func DefaultPDFFontPath() (string, error) {
+	dir, err := ConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "fonts", "LINESeedJP-Regular.ttf"), nil
 }
 
 func Load() (File, error) {

@@ -53,6 +53,21 @@ func TranslateWithProgress(ctx context.Context, tr translate.Translator, input [
 	return out, nil
 }
 
+func CountChunks(input []byte, maxChars int) int {
+	segments := collectTextSegments(input)
+	if len(segments) == 0 {
+		return 0
+	}
+	total := 0
+	for _, seg := range segments {
+		if strings.TrimSpace(seg.text) == "" {
+			continue
+		}
+		total += len(chunk.Split(seg.text, maxChars))
+	}
+	return total
+}
+
 func translateChunks(ctx context.Context, tr translate.Translator, chunks []string, from, to string, progress ProgressFunc) (string, error) {
 	var b strings.Builder
 	for _, part := range chunks {

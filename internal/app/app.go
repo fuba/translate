@@ -14,9 +14,11 @@ import (
 	"github.com/fuba/translate/internal/lang"
 	"github.com/fuba/translate/internal/llm"
 	"github.com/fuba/translate/internal/markdown"
+	progressui "github.com/fuba/translate/internal/progress"
 	"github.com/fuba/translate/internal/pdf"
 	"github.com/fuba/translate/internal/secure"
 	"github.com/fuba/translate/internal/translate"
+	"golang.org/x/term"
 )
 
 type Config struct {
@@ -30,6 +32,7 @@ type Config struct {
 	APIKey        string
 	Timeout       time.Duration
 	Verbose       bool
+	Silent        bool
 	MaxChars      int
 	Endpoint      string
 	PassphraseTTL time.Duration
@@ -63,11 +66,31 @@ func Run(ctx context.Context, cfg Config) error {
 		return err
 	}
 
-	progress := func(string) {}
-	if cfg.Verbose {
-		progress = func(text string) {
+	writesToStdout := cfg.OutPath == "" || cfg.OutPath == "-"
+	if strings.TrimSpace(cfg.DumpExtracted) != "" {
+		writesToStdout = cfg.DumpExtracted == "-"
+	}
+
+	progressFn := func(string) {}
+	var reporter *progressui.Reporter
+	if cfg.Silent {
+		progressFn = func(string) {}
+		reporter = nil
+	} else if cfg.Verbose {
+		progressFn = func(text string) {
 			fmt.Fprintln(os.Stderr, text)
 		}
+	} else if !writesToStdout && term.IsTerminal(int(os.Stderr.Fd())) {
+		reporter = progressui.New(os.Stderr)
+		progressFn = func(text string) {
+			if strings.HasPrefix(text, "[page ") && strings.HasSuffix(text, "] translating") {
+				return
+			}
+			reporter.Tick(text)
+		}
+	}
+	if reporter != nil {
+		defer reporter.Done()
 	}
 
 	switch format {
@@ -76,7 +99,10 @@ func Run(ctx context.Context, cfg Config) error {
 		if err != nil {
 			return err
 		}
-		out, err := translateText(ctx, client, string(input), cfg.From, cfg.To, cfg.MaxChars, progress)
+		if reporter != nil {
+			reporter.SetTotal(len(chunk.Split(string(input), cfg.MaxChars)))
+		}
+		out, err := translateText(ctx, client, string(input), cfg.From, cfg.To, cfg.MaxChars, progressFn)
 		if err != nil {
 			return err
 		}
@@ -86,7 +112,10 @@ func Run(ctx context.Context, cfg Config) error {
 		if err != nil {
 			return err
 		}
-		out, err := markdown.TranslateWithProgress(ctx, client, input, cfg.From, cfg.To, cfg.MaxChars, progress)
+		if reporter != nil {
+			reporter.SetTotal(markdown.CountChunks(input, cfg.MaxChars))
+		}
+		out, err := markdown.TranslateWithProgress(ctx, client, input, cfg.From, cfg.To, cfg.MaxChars, progressFn)
 		if err != nil {
 			return err
 		}
@@ -113,7 +142,14 @@ func Run(ctx context.Context, cfg Config) error {
 		if err != nil {
 			return err
 		}
-		return pdf.Translate(ctx, client, cfg.InPath, cfg.OutPath, cfg.From, cfg.To, unidocKey, cfg.MaxChars, progress, cfg.PDFFont)
+		if reporter != nil {
+			total, err := pdf.CountChunks(cfg.InPath, unidocKey, cfg.MaxChars)
+			if err != nil {
+				return err
+			}
+			reporter.SetTotal(total)
+		}
+		return pdf.Translate(ctx, client, cfg.InPath, cfg.OutPath, cfg.From, cfg.To, unidocKey, cfg.MaxChars, progressFn, cfg.PDFFont)
 	default:
 		return fmt.Errorf("unsupported format: %s", format)
 	}

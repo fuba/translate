@@ -10,6 +10,14 @@ cat input.md | translate --format md --to ja > output.md
 translate --format pdf --in input.pdf --out output.pdf
 ```
 
+## インストール（make install）
+
+```sh
+make install
+```
+
+`~/.local/bin/translate` にインストールされます（`PREFIX`/`BINDIR` で変更可）。
+
 ### 主なオプション
 
 - `--format` : `text|md|pdf|auto`（デフォルト `auto`）
@@ -23,10 +31,12 @@ translate --format pdf --in input.pdf --out output.pdf
 - `--max-chars` : 翻訳 API への最大文字数（既定 2000、0 で無効）
 - `--verbose` : 翻訳途中のテキストを stderr に逐次出力
 - `--verbose-prompt` : 送信するプロンプトを stderr に出力
+- `--silent` : 進捗表示を抑制
+- 端末実行時は、ファイル出力かつ verbose ではない場合に簡易プログレス表示を stderr に出します（総数が計算できる場合は割合を表示）
 - `--endpoint` : `chat|completion|auto`（既定 `completion`）
 - `--passphrase-ttl` : パスフレーズキャッシュ（既定 10m、0 で無効）
 - `--dump-extracted` : PDF の生テキスト抽出を出力（パス指定、`-` で stdout）
-- `--pdf-font` : PDF オーバーレイ用の TTF フォント（日本語なら必須）
+- `--pdf-font` : PDF オーバーレイ用の TTF フォント（既定: `~/.config/translate/fonts/LINESeedJP-Regular.ttf`）
 
 `--base-url` は `http://kirgizu:8080` または `http://kirgizu:8080/v1` を指定できます。内部で `/v1/*` を付与します。
 
@@ -37,6 +47,8 @@ translate --format pdf --in input.pdf --out output.pdf
 ```sh
 translate config set --base-url http://kirgizu:8080 --model gpt-oss-20b --max-chars 2000 --endpoint completion
 ```
+
+PDF 用フォントを固定したい場合は `--pdf-font` を保存できます。
 
 ## PDF について
 
@@ -58,6 +70,14 @@ translate auth set-unidoc
 
 - PDF の行単位で翻訳しオーバーレイ描画します（レイアウト維持を優先）。
 - 日本語を描画する場合は `--pdf-font` で日本語対応 TTF を指定してください。
+
+### フォントのインストール（LINE Seed JP）
+
+```sh
+./scripts/install-fonts.sh
+```
+
+インストール先: `~/.config/translate/fonts/LINESeedJP-Regular.ttf`（デフォルトで使用）
 
 ### PDF 抽出テキストの確認
 

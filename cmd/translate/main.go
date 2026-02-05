@@ -39,6 +39,10 @@ func main() {
 	}
 
 	var cfg app.Config
+	defaultPDFFont := ""
+	if path, err := config.DefaultPDFFontPath(); err == nil {
+		defaultPDFFont = path
+	}
 
 	flag.StringVar(&cfg.Format, "format", config.StringOrFallback(cfgFile.Format, "auto"), "input format: text|md|pdf|auto")
 	flag.StringVar(&cfg.InPath, "in", "", "input path (default: stdin)")
@@ -50,12 +54,13 @@ func main() {
 	flag.StringVar(&cfg.APIKey, "api-key", os.Getenv("OPENAI_API_KEY"), "API key (default: OPENAI_API_KEY)")
 	flag.DurationVar(&cfg.Timeout, "timeout", config.Timeout(cfgFile, 120*time.Second), "HTTP timeout")
 	flag.BoolVar(&cfg.Verbose, "verbose", false, "print translated chunks to stderr")
+	flag.BoolVar(&cfg.Silent, "silent", false, "suppress progress output")
 	flag.IntVar(&cfg.MaxChars, "max-chars", config.IntOrFallback(cfgFile.MaxChars, 2000), "max chars per translation request (0 disables)")
 	flag.StringVar(&cfg.Endpoint, "endpoint", config.StringOrFallback(cfgFile.Endpoint, "completion"), "endpoint: chat|completion|auto")
 	flag.DurationVar(&cfg.PassphraseTTL, "passphrase-ttl", config.PassphraseTTL(cfgFile, 10*time.Minute), "cache passphrase for duration (0 disables)")
 	flag.StringVar(&cfg.DumpExtracted, "dump-extracted", "", "dump raw extracted PDF text to path (use - for stdout)")
 	flag.BoolVar(&cfg.VerbosePrompt, "verbose-prompt", false, "print prompts to stderr")
-	flag.StringVar(&cfg.PDFFont, "pdf-font", "", "TTF font file for PDF overlay")
+	flag.StringVar(&cfg.PDFFont, "pdf-font", config.StringOrFallback(cfgFile.PDFFont, defaultPDFFont), "TTF font file for PDF overlay")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "translate - translate text/markdown/pdf via OpenAI compatible API\n\n")
@@ -150,6 +155,7 @@ func configSet(args []string) error {
 	maxChars := fs.Int("max-chars", 0, "max chars per translation request")
 	endpoint := fs.String("endpoint", "", "endpoint: chat|completion|auto")
 	passphraseTTL := fs.Duration("passphrase-ttl", 0, "cache passphrase for duration")
+	pdfFont := fs.String("pdf-font", "", "TTF font file for PDF overlay")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -180,6 +186,8 @@ func configSet(args []string) error {
 			current.Endpoint = *endpoint
 		case "passphrase-ttl":
 			current.PassphraseTTLSeconds = int(passphraseTTL.Seconds())
+		case "pdf-font":
+			current.PDFFont = *pdfFont
 		}
 	})
 
