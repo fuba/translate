@@ -1,0 +1,111 @@
+package config
+
+import (
+	"encoding/json"
+	"errors"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+)
+
+type File struct {
+	BaseURL              string `json:"base_url"`
+	Model                string `json:"model"`
+	From                 string `json:"from"`
+	To                   string `json:"to"`
+	Format               string `json:"format"`
+	TimeoutSeconds       int    `json:"timeout_seconds"`
+	MaxChars             int    `json:"max_chars"`
+	Endpoint             string `json:"endpoint"`
+	PassphraseTTLSeconds int    `json:"passphrase_ttl_seconds"`
+	PDFFont              string `json:"pdf_font"`
+}
+
+func ConfigDir() (string, error) {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "translate"), nil
+}
+
+func ConfigPath() (string, error) {
+	dir, err := ConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "config.json"), nil
+}
+
+func DefaultPDFFontPath() (string, error) {
+	dir, err := ConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "fonts", "LINESeedJP-Regular.ttf"), nil
+}
+
+func Load() (File, error) {
+	path, err := ConfigPath()
+	if err != nil {
+		return File{}, err
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return File{}, nil
+		}
+		return File{}, err
+	}
+
+	var cfg File
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return File{}, err
+	}
+	return cfg, nil
+}
+
+func Save(cfg File) error {
+	path, err := ConfigPath()
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+
+	data, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0o644)
+}
+
+func Timeout(cfg File, fallback time.Duration) time.Duration {
+	if cfg.TimeoutSeconds <= 0 {
+		return fallback
+	}
+	return time.Duration(cfg.TimeoutSeconds) * time.Second
+}
+
+func PassphraseTTL(cfg File, fallback time.Duration) time.Duration {
+	if cfg.PassphraseTTLSeconds <= 0 {
+		return fallback
+	}
+	return time.Duration(cfg.PassphraseTTLSeconds) * time.Second
+}
+
+func StringOrFallback(value, fallback string) string {
+	if strings.TrimSpace(value) == "" {
+		return fallback
+	}
+	return value
+}
+
+func IntOrFallback(value, fallback int) int {
+	if value <= 0 {
+		return fallback
+	}
+	return value
+}
