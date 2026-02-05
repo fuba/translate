@@ -15,20 +15,19 @@ install:
 	config_path="$$config_dir/config.json"; \
 	if [ ! -f "$$config_path" ]; then \
 		mkdir -p "$$config_dir"; \
-		cat > "$$config_path" <<'JSON'; \
-{ \
-  "base_url": "", \
-  "model": "gpt-oss-20b", \
-  "from": "", \
-  "to": "", \
-  "format": "", \
-  "timeout_seconds": 120, \
-  "max_chars": 2000, \
-  "endpoint": "completion", \
-  "passphrase_ttl_seconds": 600, \
-  "pdf_font": "" \
-} \
-JSON \
+		printf '%s\n' \
+		  '{' \
+		  '  "base_url": "",' \
+		  '  "model": "gpt-oss-20b",' \
+		  '  "from": "",' \
+		  '  "to": "",' \
+		  '  "format": "",' \
+		  '  "timeout_seconds": 120,' \
+		  '  "max_chars": 2000,' \
+		  '  "endpoint": "completion",' \
+		  '  "passphrase_ttl_seconds": 600,' \
+		  '  "pdf_font": ""' \
+		  '}' > "$$config_path"; \
 		echo "Wrote config template to $$config_path"; \
 		echo "Set base_url in the config to your API endpoint."; \
 	else \
