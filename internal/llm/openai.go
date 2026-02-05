@@ -59,7 +59,7 @@ func NewClient(baseURL, model string, opts ...Option) (*Client, error) {
 		model:   model,
 		// default timeout can be overridden
 		timeout:  120 * time.Second,
-		endpoint: "chat",
+		endpoint: "completion",
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -100,9 +100,10 @@ type chatCompletionResponse struct {
 }
 
 type completionRequest struct {
-	Model       string  `json:"model"`
-	Prompt      string  `json:"prompt"`
-	Temperature float64 `json:"temperature,omitempty"`
+	Model       string   `json:"model"`
+	Prompt      string   `json:"prompt"`
+	Temperature float64  `json:"temperature,omitempty"`
+	Stop        []string `json:"stop,omitempty"`
 }
 
 type completionResponse struct {
@@ -137,9 +138,9 @@ func buildSystemPrompt(from, to, format string) string {
 	}
 
 	format = strings.ToLower(strings.TrimSpace(format))
-	suffix := "Output only the translated text."
+	suffix := "Output only the translated text. Do not include any analysis or commentary."
 	if format == "markdown" {
-		suffix = "Preserve Markdown formatting and output only the translated text."
+		suffix = "Preserve Markdown formatting and output only the translated text. Do not include any analysis or commentary."
 	}
 
 	return fmt.Sprintf("You are a translation engine. Translate from %s to %s. %s", src, to, suffix)
@@ -197,11 +198,12 @@ func (c *Client) translateChat(ctx context.Context, text, from, to, format strin
 }
 
 func (c *Client) translateCompletion(ctx context.Context, text, from, to, format string) (string, error) {
-	prompt := buildSystemPrompt(from, to, format) + "\n\n" + text
+	prompt := buildSystemPrompt(from, to, format) + "\n\nINPUT:\n" + text + "\n\nOUTPUT:\n"
 	payload := completionRequest{
 		Model:       c.model,
 		Prompt:      prompt,
 		Temperature: 0.2,
+		Stop:        []string{"\n\n", "###"},
 	}
 
 	body, err := json.Marshal(payload)

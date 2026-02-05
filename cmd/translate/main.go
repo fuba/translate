@@ -51,7 +51,7 @@ func main() {
 	flag.DurationVar(&cfg.Timeout, "timeout", config.Timeout(cfgFile, 120*time.Second), "HTTP timeout")
 	flag.BoolVar(&cfg.Verbose, "verbose", false, "print translated chunks to stderr")
 	flag.IntVar(&cfg.MaxChars, "max-chars", config.IntOrFallback(cfgFile.MaxChars, 2000), "max chars per translation request (0 disables)")
-	flag.StringVar(&cfg.Endpoint, "endpoint", config.StringOrFallback(cfgFile.Endpoint, "auto"), "endpoint: chat|completion|auto")
+	flag.StringVar(&cfg.Endpoint, "endpoint", config.StringOrFallback(cfgFile.Endpoint, "completion"), "endpoint: chat|completion|auto")
 	flag.DurationVar(&cfg.PassphraseTTL, "passphrase-ttl", config.PassphraseTTL(cfgFile, 10*time.Minute), "cache passphrase for duration (0 disables)")
 
 	flag.Usage = func() {

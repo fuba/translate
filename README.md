@@ -22,7 +22,7 @@ translate --format pdf --in input.pdf --out output.pdf
 - `--timeout` : HTTP タイムアウト（既定 120s）
 - `--max-chars` : 翻訳 API への最大文字数（既定 2000、0 で無効）
 - `--verbose` : 翻訳途中のテキストを stderr に逐次出力
-- `--endpoint` : `chat|completion|auto`（既定 `auto`）
+- `--endpoint` : `chat|completion|auto`（既定 `completion`）
 - `--passphrase-ttl` : パスフレーズキャッシュ（既定 10m、0 で無効）
 
 `--base-url` は `http://kirgizu:8080` または `http://kirgizu:8080/v1` を指定できます。内部で `/v1/*` を付与します。
@@ -32,7 +32,7 @@ translate --format pdf --in input.pdf --out output.pdf
 設定ファイルは `~/.config/translate/config.json`（`XDG_CONFIG_HOME` があればそちら）に保存されます。
 
 ```sh
-translate config set --base-url http://kirgizu:8080 --model gpt-oss-20b --max-chars 2000 --endpoint auto
+translate config set --base-url http://kirgizu:8080 --model gpt-oss-20b --max-chars 2000 --endpoint completion
 ```
 
 ## PDF について
