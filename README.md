@@ -23,6 +23,7 @@ translate --format pdf --in input.pdf --out output.pdf
 - `--max-chars` : 翻訳 API への最大文字数（既定 2000、0 で無効）
 - `--verbose` : 翻訳途中のテキストを stderr に逐次出力
 - `--endpoint` : `chat|completion|auto`（既定 `auto`）
+- `--passphrase-ttl` : パスフレーズキャッシュ（既定 10m、0 で無効）
 
 `--base-url` は `http://kirgizu:8080` または `http://kirgizu:8080/v1` を指定できます。内部で `/v1/*` を付与します。
 
@@ -47,6 +48,7 @@ translate auth set-unidoc
 
 - パスフレーズで暗号化して `~/.config/translate/unidoc.key` に保存します。
 - 復号には `TRANSLATE_PASSPHRASE` を使うか、対話入力します。
+- `--passphrase-ttl` を指定すると、一定時間は再入力を省略できます。
 
 ### PDF 翻訳
 

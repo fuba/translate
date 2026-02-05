@@ -20,18 +20,19 @@ import (
 )
 
 type Config struct {
-	Format   string
-	InPath   string
-	OutPath  string
-	From     string
-	To       string
-	Model    string
-	BaseURL  string
-	APIKey   string
-	Timeout  time.Duration
-	Verbose  bool
-	MaxChars int
-	Endpoint string
+	Format        string
+	InPath        string
+	OutPath       string
+	From          string
+	To            string
+	Model         string
+	BaseURL       string
+	APIKey        string
+	Timeout       time.Duration
+	Verbose       bool
+	MaxChars      int
+	Endpoint      string
+	PassphraseTTL time.Duration
 }
 
 func Run(ctx context.Context, cfg Config) error {
@@ -93,7 +94,7 @@ func Run(ctx context.Context, cfg Config) error {
 		if cfg.OutPath == "" || cfg.OutPath == "-" {
 			return errors.New("pdf output requires a file path")
 		}
-		unidocKey, err := secure.LoadUnidocKey()
+		unidocKey, err := secure.LoadUnidocKey(cfg.PassphraseTTL)
 		if err != nil {
 			return err
 		}

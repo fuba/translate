@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/fuba/translate/internal/config"
 	"golang.org/x/term"
@@ -41,7 +42,10 @@ func SaveUnidocKey(key []byte, passphrase []byte) error {
 	return os.WriteFile(path, enc, 0o600)
 }
 
-func LoadUnidocKey() (string, error) {
+func LoadUnidocKey(ttl time.Duration) (string, error) {
+	if cached, ok := getCachedKey(time.Now()); ok {
+		return cached, nil
+	}
 	if env := strings.TrimSpace(os.Getenv("UNIDOC_LICENSE_API_KEY")); env != "" {
 		return env, nil
 	}
@@ -77,6 +81,9 @@ func LoadUnidocKey() (string, error) {
 	key := strings.TrimSpace(string(plain))
 	if key == "" {
 		return "", errors.New("unidoc key is empty")
+	}
+	if ttl > 0 {
+		setCachedKey(key, time.Now().Add(ttl))
 	}
 	return key, nil
 }

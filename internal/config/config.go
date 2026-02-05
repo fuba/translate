@@ -10,14 +10,15 @@ import (
 )
 
 type File struct {
-	BaseURL        string `json:"base_url"`
-	Model          string `json:"model"`
-	From           string `json:"from"`
-	To             string `json:"to"`
-	Format         string `json:"format"`
-	TimeoutSeconds int    `json:"timeout_seconds"`
-	MaxChars       int    `json:"max_chars"`
-	Endpoint       string `json:"endpoint"`
+	BaseURL              string `json:"base_url"`
+	Model                string `json:"model"`
+	From                 string `json:"from"`
+	To                   string `json:"to"`
+	Format               string `json:"format"`
+	TimeoutSeconds       int    `json:"timeout_seconds"`
+	MaxChars             int    `json:"max_chars"`
+	Endpoint             string `json:"endpoint"`
+	PassphraseTTLSeconds int    `json:"passphrase_ttl_seconds"`
 }
 
 func ConfigDir() (string, error) {
@@ -77,6 +78,13 @@ func Timeout(cfg File, fallback time.Duration) time.Duration {
 		return fallback
 	}
 	return time.Duration(cfg.TimeoutSeconds) * time.Second
+}
+
+func PassphraseTTL(cfg File, fallback time.Duration) time.Duration {
+	if cfg.PassphraseTTLSeconds <= 0 {
+		return fallback
+	}
+	return time.Duration(cfg.PassphraseTTLSeconds) * time.Second
 }
 
 func StringOrFallback(value, fallback string) string {
