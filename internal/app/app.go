@@ -34,6 +34,7 @@ type Config struct {
 	Endpoint      string
 	PassphraseTTL time.Duration
 	DumpExtracted string
+	VerbosePrompt bool
 }
 
 func Run(ctx context.Context, cfg Config) error {
@@ -55,6 +56,7 @@ func Run(ctx context.Context, cfg Config) error {
 		llm.WithAPIKey(cfg.APIKey),
 		llm.WithTimeout(cfg.Timeout),
 		llm.WithEndpoint(cfg.Endpoint),
+		llm.WithDebugLogger(promptLogger(cfg.VerbosePrompt)),
 	)
 	if err != nil {
 		return err
@@ -130,6 +132,15 @@ func translateText(ctx context.Context, tr translate.Translator, text, from, to 
 		}
 	}
 	return b.String(), nil
+}
+
+func promptLogger(enabled bool) func(string) {
+	if !enabled {
+		return nil
+	}
+	return func(msg string) {
+		fmt.Fprintln(os.Stderr, msg)
+	}
 }
 
 func resolveFormat(format, inPath string) (string, error) {

@@ -5,6 +5,7 @@
 - 依存関係導入・テスト実行
 - UNIDOC キー暗号化保存と設定ファイル対応
 - verbose モード追加
+- verbose-prompt 追加
 - max-chars によるチャンク分割追加
 - completion エンドポイント対応
 - パスフレーズキャッシュ追加

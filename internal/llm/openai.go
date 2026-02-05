@@ -24,6 +24,7 @@ type Client struct {
 
 	mu               sync.Mutex
 	resolvedEndpoint string
+	debugLog         func(string)
 }
 
 type Option func(*Client)
@@ -46,6 +47,11 @@ func WithEndpoint(endpoint string) Option {
 	}
 }
 
+func WithDebugLogger(logger func(string)) Option {
+	return func(c *Client) {
+		c.debugLog = logger
+	}
+}
 func NewClient(baseURL, model string, opts ...Option) (*Client, error) {
 	if strings.TrimSpace(baseURL) == "" {
 		return nil, errors.New("baseURL is required")
@@ -156,6 +162,10 @@ func (c *Client) translateChat(ctx context.Context, text, from, to, format strin
 		},
 		Temperature: 0.2,
 	}
+	if c.debugLog != nil {
+		c.debugLog("chat system:\n" + prompt)
+		c.debugLog("chat user:\n" + text)
+	}
 
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -204,6 +214,9 @@ func (c *Client) translateCompletion(ctx context.Context, text, from, to, format
 		Prompt:      prompt,
 		Temperature: 0.2,
 		Stop:        []string{"<|end|>", "<|eot_id|>", "<|start|>"},
+	}
+	if c.debugLog != nil {
+		c.debugLog("completion prompt:\n" + prompt)
 	}
 
 	body, err := json.Marshal(payload)

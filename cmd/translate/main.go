@@ -54,6 +54,7 @@ func main() {
 	flag.StringVar(&cfg.Endpoint, "endpoint", config.StringOrFallback(cfgFile.Endpoint, "completion"), "endpoint: chat|completion|auto")
 	flag.DurationVar(&cfg.PassphraseTTL, "passphrase-ttl", config.PassphraseTTL(cfgFile, 10*time.Minute), "cache passphrase for duration (0 disables)")
 	flag.StringVar(&cfg.DumpExtracted, "dump-extracted", "", "dump raw extracted PDF text to path (use - for stdout)")
+	flag.BoolVar(&cfg.VerbosePrompt, "verbose-prompt", false, "print prompts to stderr")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "translate - translate text/markdown/pdf via OpenAI compatible API\n\n")

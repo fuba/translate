@@ -22,6 +22,7 @@ translate --format pdf --in input.pdf --out output.pdf
 - `--timeout` : HTTP タイムアウト（既定 120s）
 - `--max-chars` : 翻訳 API への最大文字数（既定 2000、0 で無効）
 - `--verbose` : 翻訳途中のテキストを stderr に逐次出力
+- `--verbose-prompt` : 送信するプロンプトを stderr に出力
 - `--endpoint` : `chat|completion|auto`（既定 `completion`）
 - `--passphrase-ttl` : パスフレーズキャッシュ（既定 10m、0 で無効）
 - `--dump-extracted` : PDF の生テキスト抽出を出力（パス指定、`-` で stdout）

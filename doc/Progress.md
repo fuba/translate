@@ -9,6 +9,7 @@
 - UNIDOC キー暗号化保存（パスフレーズ、~/.config/translate/unidoc.key）
 - 設定ファイル保存（~/.config/translate/config.json）
 - verbose モードで翻訳結果を逐次出力
+- verbose-prompt で送信プロンプトを出力
 - 翻訳入力のチャンク分割（max-chars, 句読点優先）
 - completion エンドポイント対応（auto 判定）
 - パスフレーズの一時キャッシュ対応
