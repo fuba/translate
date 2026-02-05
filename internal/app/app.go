@@ -31,6 +31,7 @@ type Config struct {
 	Timeout  time.Duration
 	Verbose  bool
 	MaxChars int
+	Endpoint string
 }
 
 func Run(ctx context.Context, cfg Config) error {
@@ -46,7 +47,13 @@ func Run(ctx context.Context, cfg Config) error {
 		return errors.New("target language is required")
 	}
 
-	client, err := llm.NewClient(cfg.BaseURL, cfg.Model, llm.WithAPIKey(cfg.APIKey), llm.WithTimeout(cfg.Timeout))
+	client, err := llm.NewClient(
+		cfg.BaseURL,
+		cfg.Model,
+		llm.WithAPIKey(cfg.APIKey),
+		llm.WithTimeout(cfg.Timeout),
+		llm.WithEndpoint(cfg.Endpoint),
+	)
 	if err != nil {
 		return err
 	}

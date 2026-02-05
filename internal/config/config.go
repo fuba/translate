@@ -17,6 +17,7 @@ type File struct {
 	Format         string `json:"format"`
 	TimeoutSeconds int    `json:"timeout_seconds"`
 	MaxChars       int    `json:"max_chars"`
+	Endpoint       string `json:"endpoint"`
 }
 
 func ConfigDir() (string, error) {
