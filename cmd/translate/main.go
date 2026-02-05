@@ -50,7 +50,7 @@ func main() {
 	flag.StringVar(&cfg.From, "from", config.StringOrFallback(cfgFile.From, "auto"), "source language code (default: auto)")
 	flag.StringVar(&cfg.To, "to", cfgFile.To, "target language code (default: from LANG)")
 	flag.StringVar(&cfg.Model, "model", config.StringOrFallback(cfgFile.Model, "gpt-oss-20b"), "model name")
-	flag.StringVar(&cfg.BaseURL, "base-url", config.StringOrFallback(cfgFile.BaseURL, "http://kirgizu:8080"), "OpenAI compatible base URL")
+	flag.StringVar(&cfg.BaseURL, "base-url", cfgFile.BaseURL, "OpenAI compatible base URL")
 	flag.StringVar(&cfg.APIKey, "api-key", os.Getenv("OPENAI_API_KEY"), "API key (default: OPENAI_API_KEY)")
 	flag.DurationVar(&cfg.Timeout, "timeout", config.Timeout(cfgFile, 120*time.Second), "HTTP timeout")
 	flag.BoolVar(&cfg.Verbose, "verbose", false, "print translated chunks to stderr")
@@ -70,7 +70,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "  cat input.md | translate --format md --to ja > output.md")
 		fmt.Fprintln(os.Stderr, "  translate --format pdf --in input.pdf --out output.pdf")
 		fmt.Fprintln(os.Stderr, "\nConfig:")
-		fmt.Fprintln(os.Stderr, "  translate config set --base-url http://kirgizu:8080 --model gpt-oss-20b")
+		fmt.Fprintln(os.Stderr, "  translate config set --base-url http://your-host:8080 --model gpt-oss-20b")
 		fmt.Fprintln(os.Stderr, "\nSecrets:")
 		fmt.Fprintln(os.Stderr, "  translate auth set-unidoc")
 	}

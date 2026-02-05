@@ -25,7 +25,7 @@ make install
 - `--from` : 翻訳元言語（デフォルト `auto`）
 - `--to` : 翻訳先言語（デフォルト `LANG` から推定）
 - `--model` : 既定 `gpt-oss-20b`
-- `--base-url` : 既定 `http://kirgizu:8080`
+- `--base-url` : OpenAI 互換 API の base URL（必須）
 - `--api-key` : API キー（省略時は `OPENAI_API_KEY`）
 - `--timeout` : HTTP タイムアウト（既定 120s）
 - `--max-chars` : 翻訳 API への最大文字数（既定 2000、0 で無効）
@@ -38,14 +38,14 @@ make install
 - `--dump-extracted` : PDF の生テキスト抽出を出力（パス指定、`-` で stdout）
 - `--pdf-font` : PDF オーバーレイ用の TTF フォント（既定: `~/.config/translate/fonts/LINESeedJP-Regular.ttf`）
 
-`--base-url` は `http://kirgizu:8080` または `http://kirgizu:8080/v1` を指定できます。内部で `/v1/*` を付与します。
+`--base-url` は `http://your-host:8080` または `http://your-host:8080/v1` を指定できます。内部で `/v1/*` を付与します。
 
 ## 設定ファイル
 
 設定ファイルは `~/.config/translate/config.json`（`XDG_CONFIG_HOME` があればそちら）に保存されます。
 
 ```sh
-translate config set --base-url http://kirgizu:8080 --model gpt-oss-20b --max-chars 2000 --endpoint completion
+translate config set --base-url http://your-host:8080 --model gpt-oss-20b --max-chars 2000 --endpoint completion
 ```
 
 PDF 用フォントを固定したい場合は `--pdf-font` を保存できます。
