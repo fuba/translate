@@ -95,3 +95,7 @@ translate --format pdf --in input.pdf --dump-extracted -
 ## ライセンス
 
 CC0
+
+## ドキュメント
+
+- [Harmonyを使ったLLMアプリ開発の一般論](doc/harmony-llm-app-general.md)
