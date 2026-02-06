@@ -1,14 +1,14 @@
 module github.com/fuba/translate
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.24.13
 
 require (
 	github.com/unidoc/unipdf/v4 v4.6.0
 	github.com/yuin/goldmark v1.7.16
-	golang.org/x/crypto v0.41.0
-	golang.org/x/term v0.34.0
+	golang.org/x/crypto v0.45.0
+	golang.org/x/term v0.37.0
 )
 
 require (
@@ -25,9 +25,9 @@ require (
 	github.com/unidoc/unichart v0.5.1 // indirect
 	github.com/unidoc/unitype v0.5.1 // indirect
 	golang.org/x/image v0.30.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
